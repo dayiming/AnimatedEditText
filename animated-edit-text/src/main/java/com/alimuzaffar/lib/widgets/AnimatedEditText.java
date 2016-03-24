@@ -269,6 +269,11 @@ public class AnimatedEditText extends AppCompatEditText {
         super.onTextChanged(text, start, lengthBefore, lengthAfter);
         String added = TextUtils.substring(text, start, start + lengthAfter);
         int textLength = text.length();
+        //Log.d("AnimatedEditText", String.format("text=%s, textLength=%d, start=%d, lengthBefore=%d, lengthAfter=%d", text, textLength, start, lengthBefore, lengthAfter));
+
+        if (lengthAfter == 1 && added.equals(" ")) {
+            return;
+        }
 
         if (lengthBefore == lengthAfter) {
             //either swipe/autosuggest did something, or someone edit or paste something
@@ -277,15 +282,6 @@ public class AnimatedEditText extends AppCompatEditText {
             mEnd = textLength;
             return;
         }
-
-        if (lengthAfter == 1 && added.equals(" ")) {
-            //don't need to animate empty characters
-            mStart = textLength - 1;
-            mEnd = textLength;
-            return;
-        }
-
-        Log.d("AnimatedEditText", String.format("text=%s, textLength=%d, start=%d, lengthBefore=%d, lengthAfter=%d", text, textLength, start, lengthBefore, lengthAfter));
 
         if (lengthBefore < lengthAfter && textLength == start + lengthAfter) {
             //if we are adding text & adding it to the end of the line.
