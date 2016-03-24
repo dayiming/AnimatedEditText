@@ -22,7 +22,7 @@ details. Read more about [AnimatedEditText](https://medium.com/@ali.muzaffar),
 ###Gradle
 
 ``` dependencies{
-`compile 'com.alimuzaffar.lib:animated-edit-text:0.0.2'`
+`compile 'com.alimuzaffar.lib:animated-edit-text:0.0.3'`
 }
 ```
 
@@ -103,8 +103,8 @@ You can see a YouTube video of all the animations here: [YouTube video](https://
 
 ## Issues :
 
-- Animations are only triggered when adding to the end of the string. This is why autocomplete doesn't work as it technically replaces the whole word.
 - Animation will work best if `android:inputType="textNoSuggestions"` is set.
+- Animations are only triggered when adding to the end of the string.
 - Only `android:gravity="left|right|center_horizontal"` is supported.
 - No RTL language support.
 - Animate in from middle doesn't work properly except from `android:gravity="left"`

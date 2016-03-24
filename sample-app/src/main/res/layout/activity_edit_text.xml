@@ -34,7 +34,6 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:hint="Animate pop in"
-            android:inputType="textNoSuggestions"
             android:textColor="@color/text_colors"
             app:animationType="popIn" />
 
@@ -43,6 +42,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:hint="Animate bottom up"
+            android:gravity="right"
             android:inputType="textNoSuggestions"
             app:animationType="fromBottom" />
 
@@ -50,6 +50,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            android:gravity="center"
             android:hint="Animate right to left"
             android:inputType="textNoSuggestions"
             app:animationType="fromRight" />

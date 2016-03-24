@@ -24,7 +24,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
-import android.os.Build;
 import android.support.v7.widget.AppCompatEditText;
 import android.text.InputType;
 import android.text.TextUtils;
@@ -271,23 +270,34 @@ public class AnimatedEditText extends AppCompatEditText {
         String added = TextUtils.substring(text, start, start + lengthAfter);
         int textLength = text.length();
 
-        if (lengthBefore == lengthAfter && textLength == lengthBefore) {
+        if (lengthBefore == lengthAfter) {
             //either swipe/autosuggest did something, or someone edit or paste something
             //of the same length.
+            mStart = textLength - 1;
+            mEnd = textLength;
             return;
         }
 
         if (lengthAfter == 1 && added.equals(" ")) {
             //don't need to animate empty characters
+            mStart = textLength - 1;
+            mEnd = textLength;
             return;
         }
 
-        //Log.d("AnimatedEditText", String.format("text=%s, textLength=%d, start=%d, lengthBefore=%d, lengthAfter=%d", text, textLength, start, lengthBefore, lengthAfter));
+        Log.d("AnimatedEditText", String.format("text=%s, textLength=%d, start=%d, lengthBefore=%d, lengthAfter=%d", text, textLength, start, lengthBefore, lengthAfter));
 
-        if (lengthBefore == 0 && textLength == start + lengthAfter) {
+        if (lengthBefore < lengthAfter && textLength == start + lengthAfter) {
             //if we are adding text & adding it to the end of the line.
-            mStart = start;
-            mEnd = start + lengthAfter;
+            if (lengthBefore == 0) { //normal case when tapping keyboard.
+                mStart = start;
+                mEnd = start + lengthAfter;
+            } else {
+                //if using auto suggest, it can result in animating the whole word every
+                //time a character is tapped. This forces only the last character to animate.
+                mStart = textLength - 1;
+                mEnd = textLength;
+            }
             switch (mAnimationType) {
                 case RIGHT_TO_LEFT:
                     animateInFromRight();
