@@ -24,10 +24,12 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
+import android.os.Build;
 import android.support.v7.widget.AppCompatEditText;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.animation.DecelerateInterpolator;
@@ -43,6 +45,7 @@ public class AnimatedEditText extends AppCompatEditText {
     private Paint mPaint;
     private Paint mAnimPaint;
     private ColorStateList mOriginalTextColors;
+    private int mOriginalAlpha;
     private boolean mAnimated = true;
     private AnimationType mAnimationType = AnimationType.BOTTOM_UP;
     private String mMask = null;
@@ -137,6 +140,7 @@ public class AnimatedEditText extends AppCompatEditText {
         if (mOriginalTextColors != null) {
             mPaint.setColor(mOriginalTextColors.getDefaultColor());
             mAnimPaint.setColor(mOriginalTextColors.getDefaultColor());
+            mOriginalAlpha = mAnimPaint.getAlpha();
         }
         setTextColor(Color.TRANSPARENT);
     }
@@ -150,9 +154,12 @@ public class AnimatedEditText extends AppCompatEditText {
 
         updateColorsForState();
 
-        if ((getGravity() & Gravity.RIGHT) == Gravity.RIGHT) {
+        boolean rightAligned = (getGravity() & Gravity.RIGHT) == Gravity.RIGHT || (getGravity() & Gravity.END) == Gravity.END;
+        boolean leftAligned = (getGravity() & Gravity.LEFT) == Gravity.LEFT || (getGravity() & Gravity.START) == Gravity.START;
+
+        if (rightAligned) {
             drawGravityRight(canvas);
-        } else if ((getGravity() & Gravity.LEFT) == Gravity.LEFT) {
+        } else if (leftAligned) {
             drawGravityLeft(canvas);
         } else {
             drawGravityCenterHorizontal(canvas);
@@ -176,7 +183,7 @@ public class AnimatedEditText extends AppCompatEditText {
         String fixedText = getFixedText();
         float fixedTextWidth = mPaint.measureText(fixedText);
 
-        String animChar = getAnimChar();
+        String animChar = getAnimText();
         float animCharWidth = mPaint.measureText(animChar);
         float fullTexWidth = fixedTextWidth + animCharWidth;
 
@@ -191,7 +198,7 @@ public class AnimatedEditText extends AppCompatEditText {
         String fixedText = getFixedText();
         float fixedTextWidth = mPaint.measureText(fixedText);
 
-        String animChar = getAnimChar();
+        String animChar = getAnimText();
         float animCharWidth = mPaint.measureText(animChar);
         float fullTexWidth = fixedTextWidth + animCharWidth;
 
@@ -211,8 +218,12 @@ public class AnimatedEditText extends AppCompatEditText {
                 isSelected() ? android.R.attr.state_selected : -android.R.attr.state_selected,
         };
         int color = mOriginalTextColors.getColorForState(states, mOriginalTextColors.getDefaultColor());
+
         mPaint.setColor(color);
+
+        int alpha = mAnimPaint.getAlpha();
         mAnimPaint.setColor(color);
+        mAnimPaint.setAlpha(alpha); //retain alpha which may change because of animation.
     }
 
     private CharSequence getFullText() {
@@ -231,7 +242,7 @@ public class AnimatedEditText extends AppCompatEditText {
         }
     }
 
-    private String getAnimChar() {
+    private String getAnimText() {
         if (TextUtils.isEmpty(mMask)) {
             return TextUtils.substring(getText(), mStart, mEnd);
         } else {
@@ -257,7 +268,24 @@ public class AnimatedEditText extends AppCompatEditText {
     @Override
     protected void onTextChanged(CharSequence text, int start, int lengthBefore, int lengthAfter) {
         super.onTextChanged(text, start, lengthBefore, lengthAfter);
-        if (lengthAfter > lengthBefore && start == text.length() - 1) {
+        String added = TextUtils.substring(text, start, start + lengthAfter);
+        int textLength = text.length();
+
+        if (lengthBefore == lengthAfter && textLength == lengthBefore) {
+            //either swipe/autosuggest did something, or someone edit or paste something
+            //of the same length.
+            return;
+        }
+
+        if (lengthAfter == 1 && added.equals(" ")) {
+            //don't need to animate empty characters
+            return;
+        }
+
+        //Log.d("AnimatedEditText", String.format("text=%s, textLength=%d, start=%d, lengthBefore=%d, lengthAfter=%d", text, textLength, start, lengthBefore, lengthAfter));
+
+        if (lengthBefore == 0 && textLength == start + lengthAfter) {
+            //if we are adding text & adding it to the end of the line.
             mStart = start;
             mEnd = start + lengthAfter;
             switch (mAnimationType) {
@@ -290,7 +318,7 @@ public class AnimatedEditText extends AppCompatEditText {
                 AnimatedEditText.this.invalidate();
             }
         });
-        ValueAnimator animAlpha = ValueAnimator.ofInt(0, 255);
+        ValueAnimator animAlpha = ValueAnimator.ofInt(0, mOriginalAlpha);
         animAlpha.setDuration(300);
         animAlpha.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
@@ -341,7 +369,7 @@ public class AnimatedEditText extends AppCompatEditText {
                 AnimatedEditText.this.invalidate();
             }
         });
-        ValueAnimator animAlpha = ValueAnimator.ofInt(0, 255);
+        ValueAnimator animAlpha = ValueAnimator.ofInt(0, mOriginalAlpha);
         animAlpha.setDuration(300);
         animAlpha.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
