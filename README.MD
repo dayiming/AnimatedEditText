@@ -39,8 +39,8 @@ details. Read more about [AnimatedEditText](https://medium.com/@ali.muzaffar),
             android:maxLength="4" //required
             android:textIsSelectable="false" //recommended
             android:textSize="20sp"
-            app:pinAnimationType="popIn|fromBottom" //optional
-			app:pinCharacterMask="*" //optional
+            app:pinAnimationType="popIn|fromBottom|none" //optional, default popIn
+			app:pinCharacterMask="*" //optional, default bullet
             app:pinLineColors="@color/pin_line_colors" /> //optional
 
         <com.alimuzaffar.lib.widgets.AnimatedEditText
@@ -48,8 +48,8 @@ details. Read more about [AnimatedEditText](https://medium.com/@ali.muzaffar),
             android:layout_height="wrap_content"
             android:hint="Animate pop in"
             android:inputType="textNoSuggestions" //recommended when typing text to avoid autocomplete.
-            app:pinAnimationType="popIn|fromBottom|fromRight|fromMiddle" //optional
-            app:animationType="popIn" /> //optional
+            app:animationType="popIn|fromBottom|fromRight|fromMiddle|none" //Optional, default popIn
+            app:animateTextClear="true|false" /> //Optional, default true
 
 ### Listen for pin entry and setup TextDrawable in code
 

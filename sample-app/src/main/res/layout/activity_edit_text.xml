@@ -3,9 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:clipChildren="false"
-    android:clipToPadding="false">
+    android:layout_height="wrap_content">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -30,6 +28,7 @@
             app:pinLineColors="@color/pin_line_colors" />
 
         <com.alimuzaffar.lib.widgets.AnimatedEditText
+            android:id="@+id/txt_pop_in"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
@@ -38,6 +37,7 @@
             app:animationType="popIn" />
 
         <com.alimuzaffar.lib.widgets.AnimatedEditText
+            android:id="@+id/txt_bottom_up"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
@@ -47,6 +47,7 @@
             app:animationType="fromBottom" />
 
         <com.alimuzaffar.lib.widgets.AnimatedEditText
+            android:id="@+id/txt_right_in"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
@@ -56,6 +57,7 @@
             app:animationType="fromRight" />
 
         <com.alimuzaffar.lib.widgets.AnimatedEditText
+            android:id="@+id/txt_middle_up"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
@@ -70,5 +72,11 @@
             android:layout_marginTop="16dp"
             android:hint="Regular EditText" />
 
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="onClick_clear"
+            android:text="Toggle Text"/>
     </LinearLayout>
 </ScrollView>

@@ -310,6 +310,11 @@ public class PinEntryEditText extends EditText {
             return;
         }
 
+        if (mAnimatedType == -1) {
+            invalidate();
+            return;
+        }
+
         if (lengthAfter > lengthBefore) {
             if (mAnimatedType == 0) {
                 animatePopIn();
