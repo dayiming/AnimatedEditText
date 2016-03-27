@@ -22,7 +22,7 @@ details. Read more about [AnimatedEditText](https://medium.com/@ali.muzaffar),
 ###Gradle
 
     dependencies {
-        compile 'com.alimuzaffar.lib:animated-edit-text:0.0.4'
+        compile 'com.alimuzaffar.lib:animated-edit-text:0.0.5'
     }
 
 ##STEP-2
