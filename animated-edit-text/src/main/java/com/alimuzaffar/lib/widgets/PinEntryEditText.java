@@ -1,12 +1,12 @@
 /**
  * Copyright 2016 Ali Muzaffar
- * <p/>
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p/>
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -130,10 +130,10 @@ public class PinEntryEditText extends EditText {
         int colorSelected = outValue.data;
         mColors[0] = colorSelected;
 
-        int colorFocused = isInEditMode()? Color.GRAY : ContextCompat.getColor(context, R.color.pin_normal);
+        int colorFocused = isInEditMode() ? Color.GRAY : ContextCompat.getColor(context, R.color.pin_normal);
         mColors[1] = colorFocused;
 
-        int colorUnfocused = isInEditMode()? Color.GRAY : ContextCompat.getColor(context, R.color.pin_normal);
+        int colorUnfocused = isInEditMode() ? Color.GRAY : ContextCompat.getColor(context, R.color.pin_normal);
         mColors[2] = colorUnfocused;
 
         setBackgroundResource(0);
@@ -338,7 +338,8 @@ public class PinEntryEditText extends EditText {
         if (getText().length() == mMaxLength && mOnPinEnteredListener != null) {
             va.addListener(new Animator.AnimatorListener() {
                 @Override
-                public void onAnimationStart(Animator animation) {}
+                public void onAnimationStart(Animator animation) {
+                }
 
                 @Override
                 public void onAnimationEnd(Animator animation) {
@@ -346,10 +347,12 @@ public class PinEntryEditText extends EditText {
                 }
 
                 @Override
-                public void onAnimationCancel(Animator animation) {}
+                public void onAnimationCancel(Animator animation) {
+                }
 
                 @Override
-                public void onAnimationRepeat(Animator animation) {}
+                public void onAnimationRepeat(Animator animation) {
+                }
             });
         }
         va.start();
