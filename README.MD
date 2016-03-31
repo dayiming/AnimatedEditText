@@ -5,10 +5,23 @@ extend the behaviour of `EditText` and implement features that are otherwise not
 
 ## Features
 
-- Text animates in as typed.
+### AnimatedEditText
+
+- Text animates in as typed (4 animations available).
+- Text animates out when cleared using `setText(null)` or `setText("")`.
+- Smooth forward movement of cursor (API 16+).
+- Smooth backward movement of cursor when clear is called (API 16+, see known issues).
+- Lets you specify any character to be used as a mask for input.
+
+### PinEntryEditText
+
 - PinEntryEditText which supports animations.
+- Lets you specify any character to be used as a mask for input.
+
+### Others
+
 - TextDrawable which allows you to set and use text as a drawable.
-- AnimatedEditText and PinEntryEditText let you specify any mask you want for the text.
+
 
 ## Usage
 
@@ -22,7 +35,7 @@ details. Read more about [AnimatedEditText](https://medium.com/@ali.muzaffar),
 ###Gradle
 
     dependencies {
-        compile 'com.alimuzaffar.lib:animated-edit-text:0.0.5'
+        compile 'com.alimuzaffar.lib:animated-edit-text:0.0.6'
     }
 
 ##STEP-2
@@ -49,6 +62,7 @@ details. Read more about [AnimatedEditText](https://medium.com/@ali.muzaffar),
             android:hint="Animate pop in"
             android:inputType="textNoSuggestions" //recommended when typing text to avoid autocomplete.
             app:animationType="popIn|fromBottom|fromRight|fromMiddle|none" //Optional, default popIn
+            app:animateCursor="true|false" //Optional, default true
             app:animateTextClear="true|false" /> //Optional, default true
 
 ### Listen for pin entry and setup TextDrawable in code
@@ -102,9 +116,11 @@ You can see a YouTube video of all the animations here: [YouTube video](https://
 
 ## Issues :
 
+- Only works for single line input, the second the line has to wrap, the animation breaks.
 - Animation will work best if `android:inputType="textNoSuggestions"` is set.
 - Animations are only triggered when adding to the end of the string.
 - Only `android:gravity="left|right|center_horizontal"` is supported.
+- Smooth back movement of cursor when text is cleared doesn't work too well for `android:gravity="center_horizontal"`
 - No RTL language support.
 - Animate in from middle doesn't work properly except from `android:gravity="left"`
 - Not all features of EditText will work

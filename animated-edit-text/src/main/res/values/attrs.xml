@@ -10,6 +10,7 @@
         </attr>
         <attr name="textMask" format="string" />
         <attr name="animateTextClear" format="boolean" />
+        <attr name="animateCursor" format="boolean" />
     </declare-styleable>
 
     <declare-styleable name="PinEntryEditText">

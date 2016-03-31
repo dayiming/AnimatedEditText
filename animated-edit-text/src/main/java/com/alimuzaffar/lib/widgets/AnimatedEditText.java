@@ -18,14 +18,18 @@ package com.alimuzaffar.lib.widgets;
 import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.Typeface;
+import android.os.Build;
 import android.support.v7.widget.AppCompatEditText;
+import android.support.v7.widget.ViewUtils;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.util.AttributeSet;
@@ -34,6 +38,9 @@ import android.view.Gravity;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 /**
  * An EditText field that can animate the typed text.
  * Current only support LTR languages.
@@ -41,8 +48,12 @@ import android.view.animation.OvershootInterpolator;
  * @author Ali Muzaffar
  */
 public class AnimatedEditText extends AppCompatEditText {
+    public static final String XML_NAMESPACE_ANDROID = "http://schemas.android.com/apk/res/android";
+
     private Paint mPaint;
     private Paint mAnimPaint;
+    private Paint mCursorPaint;
+
     private ColorStateList mOriginalTextColors;
     private int mOriginalAlpha;
     private boolean mAnimated = true;
@@ -59,6 +70,14 @@ public class AnimatedEditText extends AppCompatEditText {
     private int mEnd = 0;
 
     private AnimatorSet mAnimSet = null;
+
+    private float mCursorX = 0;
+    private boolean mAnimateCursor = true;
+    private boolean mShouldAnimateCursor = false;
+    //use as an object pool to prevent constant recreation.
+    //not sure if this makes much of a difference as the Animator
+    //object would still be recycled.
+    Collection<Animator> mAnimationsToPlay = new ArrayList<>();
 
 
     public enum AnimationType {
@@ -98,6 +117,9 @@ public class AnimatedEditText extends AppCompatEditText {
             }
             mMask = ta.getString(R.styleable.AnimatedEditText_textMask);
             mAnimatedClear = ta.getBoolean(R.styleable.AnimatedEditText_animateTextClear, mAnimatedClear);
+            //Only allow animate cursor feature on API 16+
+            mAnimateCursor = ta.getBoolean(R.styleable.AnimatedEditText_animateCursor, mAnimateCursor);
+            mAnimateCursor = mAnimateCursor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && !ViewUtils.isLayoutRtl(this);
         } finally {
             ta.recycle();
         }
@@ -112,8 +134,21 @@ public class AnimatedEditText extends AppCompatEditText {
         if (!TextUtils.isEmpty(mMask)) {
             mMaskChars = getMaskChars();
         }
+
+        mCursorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        TypedValue outValue = new TypedValue();
+        context.getTheme().resolveAttribute(R.attr.colorControlActivated,
+                outValue, true);
+        int colorSelected = outValue.data;
+        mCursorPaint.setColor(colorSelected);
+        mCursorPaint.setStrokeWidth(context.getResources().getDisplayMetrics().density * 2);
     }
 
+    /**
+     * Should the text be animated.
+     *
+     * @param animated should the text be animated.
+     */
     public void setTextAnimated(boolean animated) {
         mAnimated = animated;
         if (animated) {
@@ -123,6 +158,11 @@ public class AnimatedEditText extends AppCompatEditText {
         }
     }
 
+    /**
+     * Set the type of animation this view should use.
+     *
+     * @param animationType AnimationType RIGHT_TO_LEFT, BOTTOM_UP, MIDDLE_UP, POP_IN or NONE
+     */
     public void setAnimationType(AnimationType animationType) {
         if (mAnimationType == null || animationType == AnimationType.NONE) {
             mAnimationType = AnimationType.NONE;
@@ -130,6 +170,20 @@ public class AnimatedEditText extends AppCompatEditText {
         } else {
             mAnimationType = animationType;
         }
+    }
+
+    /**
+     * Animated the forward movement of the cursor.
+     * <p/>
+     * Only available of JellyBean and above devices.
+     * Does not work with RTL languages.
+     *
+     * @param animated Animate the cursors movement.
+     */
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+    public void setCursorAnimated(boolean animated) {
+        mAnimateCursor = animated && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && !ViewUtils.isLayoutRtl(this);
+
     }
 
     @Override
@@ -182,8 +236,8 @@ public class AnimatedEditText extends AppCompatEditText {
         } else {
             drawGravityCenterHorizontal(canvas);
         }
-    }
 
+    }
 
     private void drawGravityLeft(Canvas canvas) {
         String fixedText = getFixedText();
@@ -191,6 +245,7 @@ public class AnimatedEditText extends AppCompatEditText {
         float startX = getCompoundPaddingLeft();
         drawFixedText(canvas, fixedText, startX, getLineBounds(0, null));
         drawAnimText(canvas, getFullText(), startX + fixedTextWidth, getLineBounds(0, null));
+        drawCursor(canvas, startX + fixedTextWidth);
     }
 
     /*
@@ -208,7 +263,6 @@ public class AnimatedEditText extends AppCompatEditText {
         float startX = getWidth() - getCompoundPaddingRight();
         drawFixedText(canvas, fixedText, startX - fullTexWidth, getLineBounds(0, null));
         drawAnimText(canvas, getFullText(), startX - animCharWidth, getLineBounds(0, null));
-
     }
 
     private void drawGravityCenterHorizontal(Canvas canvas) {
@@ -224,6 +278,7 @@ public class AnimatedEditText extends AppCompatEditText {
         float startXAnim = getWidth() / 2 + fullTexWidth / 2 - animCharWidth;
         drawFixedText(canvas, fixedText, startX, getLineBounds(0, null));
         drawAnimText(canvas, getFullText(), startXAnim, getLineBounds(0, null));
+        drawCursor(canvas, startXAnim);
     }
 
     private void drawFixedText(Canvas canvas, String fixedText, float startX, float bottomX) {
@@ -232,6 +287,20 @@ public class AnimatedEditText extends AppCompatEditText {
 
     private void drawAnimText(Canvas canvas, CharSequence animText, float startX, float bottomX) {
         canvas.drawText(animText, mStart, mEnd, startX + mAnimRightOffset, bottomX + mAnimBottomOffset, mAnimPaint);
+    }
+
+    private void drawCursor(Canvas canvas, float startX) {
+        if (mAnimateCursor && isFocused()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) { //redundant, but used to suppress lint
+                if (!isCursorVisible()) {
+                    float cursorStartX = startX + mCursorX;
+                    float cursorStartY = getCompoundPaddingTop();
+                    float cursorStopX = cursorStartX;
+                    float cursorStopY = getHeight() - getContext().getResources().getDisplayMetrics().scaledDensity * 11;
+                    canvas.drawLine(cursorStartX, cursorStartY, cursorStopX, cursorStopY, mCursorPaint);
+                }
+            }
+        }
     }
 
     private void updateColorsForState() {
@@ -324,6 +393,12 @@ public class AnimatedEditText extends AppCompatEditText {
         } else {
             super.setText(text, type);
         }
+    }
+
+    @Override
+    protected void onFocusChanged(boolean focused, int direction, Rect previouslyFocusedRect) {
+        super.onFocusChanged(focused, direction, previouslyFocusedRect);
+        mShouldAnimateCursor = mAnimateCursor && focused;
     }
 
     @Override
@@ -426,7 +501,14 @@ public class AnimatedEditText extends AppCompatEditText {
         if (listener != null) {
             mAnimSet.addListener(listener);
         }
-        mAnimSet.playTogether(animAlpha, animUp);
+        mAnimationsToPlay.clear();
+        mAnimationsToPlay.add(animAlpha);
+        mAnimationsToPlay.add(animUp);
+        if (mShouldAnimateCursor) {
+            ValueAnimator animCursor = animateMoveCursor(reverse);
+            mAnimationsToPlay.add(animCursor);
+        }
+        mAnimSet.playTogether(mAnimationsToPlay);
         mAnimSet.start();
     }
 
@@ -451,7 +533,13 @@ public class AnimatedEditText extends AppCompatEditText {
         if (listener != null) {
             mAnimSet.addListener(listener);
         }
-        mAnimSet.play(va);
+        mAnimationsToPlay.clear();
+        mAnimationsToPlay.add(va);
+        if (mShouldAnimateCursor) {
+            ValueAnimator animCursor = animateMoveCursor(reverse);
+            mAnimationsToPlay.add(animCursor);
+        }
+        mAnimSet.playTogether(mAnimationsToPlay);
         mAnimSet.start();
     }
 
@@ -462,8 +550,8 @@ public class AnimatedEditText extends AppCompatEditText {
     private void animateInFromMiddle(boolean reverse, AnimationEndListener listener) {
         String fixed = TextUtils.substring(getText(), 0, mStart);
         final float textWidth = mPaint.measureText(fixed);
-        float startMiddle = reverse? textWidth : getWidth() / 2;
-        float endMiddle = reverse? getWidth() / 2 : textWidth;
+        float startMiddle = reverse ? textWidth : getWidth() / 2;
+        float endMiddle = reverse ? getWidth() / 2 : textWidth;
 
         ValueAnimator animMiddle = ValueAnimator.ofFloat(startMiddle, endMiddle);
         animMiddle.setInterpolator(new DecelerateInterpolator());
@@ -477,8 +565,8 @@ public class AnimatedEditText extends AppCompatEditText {
             }
         });
 
-        float startUp = reverse? 0 : getHeight() - getCompoundPaddingBottom() - getCompoundPaddingTop();
-        float endUp = reverse? getHeight() - getCompoundPaddingBottom() - getCompoundPaddingTop() : 0;
+        float startUp = reverse ? 0 : getHeight() - getCompoundPaddingBottom() - getCompoundPaddingTop();
+        float endUp = reverse ? getHeight() - getCompoundPaddingBottom() - getCompoundPaddingTop() : 0;
         ValueAnimator animUp = ValueAnimator.ofFloat(startUp, endUp);
         animUp.setDuration(200);
         animUp.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -489,8 +577,8 @@ public class AnimatedEditText extends AppCompatEditText {
             }
         });
 
-        int alphaStart = reverse? mOriginalAlpha : 0;
-        int alphaEnd = reverse? 0 : mOriginalAlpha;
+        int alphaStart = reverse ? mOriginalAlpha : 0;
+        int alphaEnd = reverse ? 0 : mOriginalAlpha;
         ValueAnimator animAlpha = ValueAnimator.ofInt(alphaStart, alphaEnd);
         animAlpha.setDuration(300);
         animAlpha.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -504,7 +592,15 @@ public class AnimatedEditText extends AppCompatEditText {
         if (listener != null) {
             mAnimSet.addListener(listener);
         }
-        mAnimSet.playTogether(animUp, animAlpha, animMiddle);
+        mAnimationsToPlay.clear();
+        mAnimationsToPlay.add(animUp);
+        mAnimationsToPlay.add(animAlpha);
+        mAnimationsToPlay.add(animMiddle);
+        if (mShouldAnimateCursor) {
+            ValueAnimator animCursor = animateMoveCursor(reverse);
+            mAnimationsToPlay.add(animCursor);
+        }
+        mAnimSet.playTogether(mAnimationsToPlay);
         mAnimSet.start();
     }
 
@@ -516,7 +612,6 @@ public class AnimatedEditText extends AppCompatEditText {
         float start = reverse ? getPaint().getTextSize() : 1;
         float end = reverse ? 1 : getPaint().getTextSize();
         ValueAnimator va = ValueAnimator.ofFloat(start, end);
-        va.setDuration(200);
         va.setInterpolator(new OvershootInterpolator());
         va.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
@@ -529,10 +624,45 @@ public class AnimatedEditText extends AppCompatEditText {
         if (listener != null) {
             mAnimSet.addListener(listener);
         }
-        mAnimSet.play(va);
+        mAnimationsToPlay.clear();
+        mAnimationsToPlay.add(va);
+        if (mShouldAnimateCursor) {
+            ValueAnimator animCursor = animateMoveCursor(reverse);
+            mAnimationsToPlay.add(animCursor);
+        }
+        mAnimSet.playTogether(mAnimationsToPlay);
+        mAnimSet.setDuration(200);
         mAnimSet.start();
     }
 
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+    private ValueAnimator animateMoveCursor(boolean reverse) {
+        float start = reverse? getPaint().measureText(getAnimText()) : 0;
+        float end = reverse? 0 : getPaint().measureText(getAnimText());
+        ValueAnimator va = ValueAnimator.ofFloat(start, end);
+
+        va.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                mCursorX = getCompoundPaddingLeft() + (Float) animation.getAnimatedValue();
+            }
+        });
+        if (isCursorVisible()) {
+            va.addListener(new AnimationEndListener() {
+                @Override
+                public void onAnimationStart(Animator animation) {
+                    setCursorVisible(false);
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    setCursorVisible(true);
+                    setSelection(getText().length());
+                }
+            });
+        }
+        return va;
+    }
 
 
 }
