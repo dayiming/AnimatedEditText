@@ -35,12 +35,21 @@ details. Read more about [AnimatedEditText](https://medium.com/@ali.muzaffar),
 ###Gradle
 
     dependencies {
-        compile 'com.alimuzaffar.lib:animated-edit-text:0.0.6'
+        compile 'com.alimuzaffar.lib:animated-edit-text:0.0.7'
     }
 
 ##STEP-2
 
 ### Setup AnimatedTextView and PinEntryView in your layout
+
+        <com.alimuzaffar.lib.widgets.AnimatedEditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Animate pop in"
+            android:inputType="textNoSuggestions" //recommended when typing text to avoid autocomplete.
+            app:animationType="popIn|fromBottom|fromRight|fromMiddle|none" //Optional, default popIn
+            app:animateCursor="true|false" //Optional, default true
+            app:animateTextClear="true|false" /> //Optional, default true
 
         <com.alimuzaffar.lib.widgets.PinEntryEditText
             android:id="@+id/txt_pin_entry"
@@ -52,18 +61,14 @@ details. Read more about [AnimatedEditText](https://medium.com/@ali.muzaffar),
             android:maxLength="4" //required
             android:textIsSelectable="false" //recommended
             android:textSize="20sp"
+            app:pinBackgroundDrawable="@drawable/bg_pin" //optional, use your own pin char background
             app:pinAnimationType="popIn|fromBottom|none" //optional, default popIn
 			app:pinCharacterMask="*" //optional, default bullet
+			app:pinTextBottomPadding="@dimen/space" //optional, space between character and bottom line.
+			app:pinLineStroke="2dp" //the stroke (height) of the bottom line by default.
+			app:pinLineStrokeSelected="4dp" //the stroke (height) of the bottom line when field is focused.
             app:pinLineColors="@color/pin_line_colors" /> //optional
 
-        <com.alimuzaffar.lib.widgets.AnimatedEditText
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Animate pop in"
-            android:inputType="textNoSuggestions" //recommended when typing text to avoid autocomplete.
-            app:animationType="popIn|fromBottom|fromRight|fromMiddle|none" //Optional, default popIn
-            app:animateCursor="true|false" //Optional, default true
-            app:animateTextClear="true|false" /> //Optional, default true
 
 ### Listen for pin entry and setup TextDrawable in code
 
@@ -86,6 +91,43 @@ details. Read more about [AnimatedEditText](https://medium.com/@ali.muzaffar),
         if (regular != null) {
             regular.setCompoundDrawables(new TextDrawable(regular, "+61 "), null, new TextDrawable(regular, "\u2605"), null);
         }
+
+## Use your own Drawable as a pin character background
+
+You can use your own drawable for the pin entry background by specifying the `app:pinBackgroundDrawable`
+attribute in the xml. If you want to specify the empty and filled states using your background drawable
+you can set the `textColor` to transparent and setup your drawable as follows:
+
+        <selector xmlns:android="http://schemas.android.com/apk/res/android">
+            <!-- Space contains text -->
+            <item android:state_focused="true" android:state_checked="true">
+                <shape android:shape="rectangle">
+                    <solid android:color="@android:color/holo_green_light"/>
+                </shape>
+            </item>
+            <!--Space is the next space for character input -->
+            <item android:state_focused="true" android:state_selected="true">
+                <shape android:shape="rectangle">
+                    <solid android:color="@android:color/holo_blue_bright"/>
+                </shape>
+            </item>
+            <!-- PinEntryEditText is focused -->
+            <item android:state_focused="true">
+                <shape android:shape="rectangle">
+                    <solid android:color="@android:color/white"/>
+                </shape>
+            </item>
+            <!-- PinEntryEditText is not focused -->
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="@android:color/darker_gray"/>
+                </shape>
+            </item>
+        </selector>
+
+Note that in this setup, the size of the drawable will be determined by the `textSize` and and the `pinTextBottomPadding`
+which is the space between the character and the line below (or the bottom of the `pinBackgroundDrawable`).
+For good measure, set `pinAnimationType` to none as well.
 
 ## Effects :
 

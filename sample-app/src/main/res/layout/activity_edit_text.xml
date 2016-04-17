@@ -25,6 +25,7 @@
             android:textIsSelectable="false"
             android:textSize="20sp"
             android:visibility="visible"
+            app:pinBackgroundDrawable="@drawable/bg_pin"
             app:pinLineColors="@color/pin_line_colors" />
 
         <com.alimuzaffar.lib.widgets.AnimatedEditText

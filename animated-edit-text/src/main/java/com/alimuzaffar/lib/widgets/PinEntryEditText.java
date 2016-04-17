@@ -1,12 +1,12 @@
 /**
  * Copyright 2016 Ali Muzaffar
- * <p>
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,7 +25,9 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.support.v4.content.ContextCompat;
 import android.text.InputType;
@@ -53,7 +55,10 @@ public class PinEntryEditText extends EditText {
     private int mMaxLength = 4;
     private RectF[] mLineCoords;
     private float[] mCharBottom;
+    private Paint mCharPaint;
     private Paint mLastCharPaint;
+    private Drawable mPinBackground;
+    private Rect mTextHeight = new Rect();
 
     private OnClickListener mClickListener;
     private OnPinEnteredListener mOnPinEnteredListener = null;
@@ -62,6 +67,7 @@ public class PinEntryEditText extends EditText {
     private float mLineStrokeSelected = 2; //2dp by default
     private Paint mLinesPaint;
     private boolean mAnimate = false;
+    private ColorStateList mOriginalTextColors;
     int[][] mStates = new int[][]{
             new int[]{android.R.attr.state_selected}, // selected
             new int[]{android.R.attr.state_focused}, // focused
@@ -113,6 +119,7 @@ public class PinEntryEditText extends EditText {
             mLineStrokeSelected = ta.getDimension(R.styleable.PinEntryEditText_pinLineStrokeSelected, mLineStrokeSelected);
             mSpace = ta.getDimension(R.styleable.PinEntryEditText_pinCharacterSpacing, mSpace);
             mTextBottomPadding = ta.getDimension(R.styleable.PinEntryEditText_pinTextBottomPadding, mTextBottomPadding);
+            mPinBackground = ta.getDrawable(R.styleable.PinEntryEditText_pinBackgroundDrawable);
             ColorStateList colors = ta.getColorStateList(R.styleable.PinEntryEditText_pinLineColors);
             if (colors != null) {
                 mColorStates = colors;
@@ -121,6 +128,8 @@ public class PinEntryEditText extends EditText {
             ta.recycle();
         }
 
+        mCharPaint = new Paint(getPaint());
+        mLastCharPaint = new Paint(getPaint());
         mLinesPaint = new Paint(getPaint());
         mLinesPaint.setStrokeWidth(mLineStroke);
 
@@ -188,11 +197,18 @@ public class PinEntryEditText extends EditText {
             mMaskChars = getMaskChars();
         }
 
+        //Height of the characters, used if there is a background drawable
+        getPaint().getTextBounds("|", 0, 1, mTextHeight);
     }
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
+        mOriginalTextColors = getTextColors();
+        if (mOriginalTextColors != null) {
+            mLastCharPaint.setColor(mOriginalTextColors.getDefaultColor());
+            mCharPaint.setColor(mOriginalTextColors.getDefaultColor());
+        }
         int availableWidth = getWidth() - getPaddingRight() - getPaddingLeft();
         if (mSpace < 0) {
             mCharSize = (availableWidth / (mNumChars * 2 - 1));
@@ -205,6 +221,9 @@ public class PinEntryEditText extends EditText {
         int bottom = getHeight() - getPaddingBottom();
         for (int i = 0; i < mNumChars; i++) {
             mLineCoords[i] = new RectF(startX, bottom, startX + mCharSize, bottom);
+            if (mPinBackground != null) {
+                mLineCoords[i].top -= mTextHeight.height() + mTextBottomPadding * 2;
+            }
             if (mSpace < 0) {
                 startX += mCharSize * 2;
             } else {
@@ -212,7 +231,6 @@ public class PinEntryEditText extends EditText {
             }
             mCharBottom[i] = mLineCoords[i].bottom - mTextBottomPadding;
         }
-        mLastCharPaint = new Paint(getPaint());
     }
 
     @Override
@@ -234,16 +252,25 @@ public class PinEntryEditText extends EditText {
         getPaint().getTextWidths(text, 0, textLength, textWidths);
 
         for (int i = 0; i < mNumChars; i++) {
+            //If a background for the pin characters is specified, it should be behind the characters.
+            if (mPinBackground != null) {
+                updateDrawableState(i < textLength, i == textLength);
+                mPinBackground.setBounds((int) mLineCoords[i].left, (int) mLineCoords[i].top, (int) mLineCoords[i].right, (int) mLineCoords[i].bottom);
+                mPinBackground.draw(canvas);
+            }
             if (textLength > i) {
                 float middle = mLineCoords[i].left + mCharSize / 2;
                 if (!mAnimate || i != textLength - 1) {
-                    canvas.drawText(text, i, i + 1, middle - textWidths[i] / 2, mCharBottom[i], getPaint());
+                    canvas.drawText(text, i, i + 1, middle - textWidths[i] / 2, mCharBottom[i], mCharPaint);
                 } else {
                     canvas.drawText(text, i, i + 1, middle - textWidths[i] / 2, mCharBottom[i], mLastCharPaint);
                 }
             }
-            updateColorForLines(i <= textLength);
-            canvas.drawLine(mLineCoords[i].left, mLineCoords[i].top, mLineCoords[i].right, mLineCoords[i].bottom, mLinesPaint);
+            //The lines should be in front of the text (because that's how I want it).
+            if (mPinBackground == null) {
+                updateColorForLines(i <= textLength);
+                canvas.drawLine(mLineCoords[i].left, mLineCoords[i].top, mLineCoords[i].right, mLineCoords[i].bottom, mLinesPaint);
+            }
         }
     }
 
@@ -289,6 +316,19 @@ public class PinEntryEditText extends EditText {
         } else {
             mLinesPaint.setStrokeWidth(mLineStroke);
             mLinesPaint.setColor(getColorForState(-android.R.attr.state_focused));
+        }
+    }
+
+    private void updateDrawableState(boolean hasText, boolean isNext) {
+        if (isFocused()) {
+            mPinBackground.setState(new int[]{android.R.attr.state_focused});
+            if (isNext) {
+                mPinBackground.setState(new int[]{android.R.attr.state_focused, android.R.attr.state_selected});
+            } else if (hasText) {
+                mPinBackground.setState(new int[]{android.R.attr.state_focused, android.R.attr.state_checked});
+            }
+        } else {
+            mPinBackground.setState(new int[]{-android.R.attr.state_focused});
         }
     }
 
