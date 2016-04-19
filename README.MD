@@ -32,13 +32,13 @@ details. Read more about [AnimatedEditText](https://medium.com/@ali.muzaffar),
 
 ## STEP-1
 
-###Gradle
+### Gradle
 
     dependencies {
-        compile 'com.alimuzaffar.lib:animated-edit-text:0.0.7'
+        compile 'com.alimuzaffar.lib:animated-edit-text:0.0.8'
     }
 
-##STEP-2
+## STEP-2
 
 ### Setup AnimatedTextView and PinEntryView in your layout
 
@@ -67,6 +67,7 @@ details. Read more about [AnimatedEditText](https://medium.com/@ali.muzaffar),
 			app:pinTextBottomPadding="@dimen/space" //optional, space between character and bottom line.
 			app:pinLineStroke="2dp" //the stroke (height) of the bottom line by default.
 			app:pinLineStrokeSelected="4dp" //the stroke (height) of the bottom line when field is focused.
+			app:pinBackgroundIsSquare="true|false" //optional, if you want the background drawable to be a square or circle width of each digit will be set to match the height of the widget.
             app:pinLineColors="@color/pin_line_colors" /> //optional
 
 

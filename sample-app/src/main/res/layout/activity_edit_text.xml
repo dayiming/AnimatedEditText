@@ -15,6 +15,7 @@
         tools:context=".activity.EditTextWidgetsActivity">
 
         <com.alimuzaffar.lib.widgets.PinEntryEditText
+            android:background="@null"
             android:id="@+id/txt_pin_entry"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -27,6 +28,27 @@
             android:visibility="visible"
             app:pinBackgroundDrawable="@drawable/bg_pin"
             app:pinLineColors="@color/pin_line_colors" />
+
+        <com.alimuzaffar.lib.widgets.PinEntryEditText
+            android:background="@null"
+            android:id="@+id/txt_pin_entry2"
+            android:layout_width="96dp"
+            android:layout_height="8dp"
+            android:layout_gravity="center_horizontal"
+            android:cursorVisible="false"
+            android:digits="1234567890"
+            android:layout_marginTop="16dp"
+            android:inputType="number"
+            android:maxLength="6"
+            android:textColor="@android:color/transparent"
+            android:textIsSelectable="false"
+            android:textSize="0px"
+            android:visibility="visible"
+            app:pinBackgroundDrawable="@drawable/bg_pin_round"
+            app:pinCharacterSpacing="8dp"
+            app:pinLineColors="@color/pin_line_colors"
+            app:pinBackgroundIsSquare="true"
+            app:pinTextBottomPadding="4dp" />
 
         <com.alimuzaffar.lib.widgets.AnimatedEditText
             android:id="@+id/txt_pop_in"
@@ -43,8 +65,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:hint="Animate bottom up"
             android:gravity="right"
+            android:hint="Animate bottom up"
             android:inputType="textNoSuggestions"
             app:animationType="fromBottom" />
 
@@ -79,6 +101,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:onClick="onClick_clear"
-            android:text="Toggle Text"/>
+            android:text="Toggle Text" />
     </LinearLayout>
 </ScrollView>

@@ -26,5 +26,6 @@
         <attr name="pinTextBottomPadding" format="dimension" />
         <attr name="pinLineColors" format="color" />
         <attr name="pinBackgroundDrawable" format="reference" />
+        <attr name="pinBackgroundIsSquare" format="boolean" />
     </declare-styleable>
 </resources>

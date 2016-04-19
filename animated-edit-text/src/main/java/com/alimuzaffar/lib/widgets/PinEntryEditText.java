@@ -59,6 +59,7 @@ public class PinEntryEditText extends EditText {
     private Paint mLastCharPaint;
     private Drawable mPinBackground;
     private Rect mTextHeight = new Rect();
+    private boolean mIsDigitSquare = false;
 
     private OnClickListener mClickListener;
     private OnPinEnteredListener mOnPinEnteredListener = null;
@@ -67,15 +68,18 @@ public class PinEntryEditText extends EditText {
     private float mLineStrokeSelected = 2; //2dp by default
     private Paint mLinesPaint;
     private boolean mAnimate = false;
+    private boolean mHasError = false;
     private ColorStateList mOriginalTextColors;
     int[][] mStates = new int[][]{
             new int[]{android.R.attr.state_selected}, // selected
+            new int[]{android.R.attr.state_active}, // error
             new int[]{android.R.attr.state_focused}, // focused
             new int[]{-android.R.attr.state_focused}, // unfocused
     };
 
     int[] mColors = new int[]{
             Color.GREEN,
+            Color.RED,
             Color.BLACK,
             Color.GRAY
     };
@@ -119,6 +123,7 @@ public class PinEntryEditText extends EditText {
             mLineStrokeSelected = ta.getDimension(R.styleable.PinEntryEditText_pinLineStrokeSelected, mLineStrokeSelected);
             mSpace = ta.getDimension(R.styleable.PinEntryEditText_pinCharacterSpacing, mSpace);
             mTextBottomPadding = ta.getDimension(R.styleable.PinEntryEditText_pinTextBottomPadding, mTextBottomPadding);
+            mIsDigitSquare = ta.getBoolean(R.styleable.PinEntryEditText_pinBackgroundIsSquare, mIsDigitSquare);
             mPinBackground = ta.getDrawable(R.styleable.PinEntryEditText_pinBackgroundDrawable);
             ColorStateList colors = ta.getColorStateList(R.styleable.PinEntryEditText_pinLineColors);
             if (colors != null) {
@@ -222,8 +227,14 @@ public class PinEntryEditText extends EditText {
         for (int i = 0; i < mNumChars; i++) {
             mLineCoords[i] = new RectF(startX, bottom, startX + mCharSize, bottom);
             if (mPinBackground != null) {
-                mLineCoords[i].top -= mTextHeight.height() + mTextBottomPadding * 2;
+                if (mIsDigitSquare) {
+                    mLineCoords[i].top = getPaddingTop();
+                    mLineCoords[i].right = startX + mLineCoords[i].height();
+                } else {
+                    mLineCoords[i].top -= mTextHeight.height() + mTextBottomPadding * 2;
+                }
             }
+
             if (mSpace < 0) {
                 startX += mCharSize * 2;
             } else {
@@ -307,7 +318,9 @@ public class PinEntryEditText extends EditText {
      *                        the next character to be typed?
      */
     private void updateColorForLines(boolean hasTextOrIsNext) {
-        if (isFocused()) {
+        if (mHasError) {
+            mLinesPaint.setColor(getColorForState(android.R.attr.state_active));
+        } else if (isFocused()) {
             mLinesPaint.setStrokeWidth(mLineStrokeSelected);
             mLinesPaint.setColor(getColorForState(android.R.attr.state_focused));
             if (hasTextOrIsNext) {
@@ -320,7 +333,9 @@ public class PinEntryEditText extends EditText {
     }
 
     private void updateDrawableState(boolean hasText, boolean isNext) {
-        if (isFocused()) {
+        if (mHasError) {
+            mPinBackground.setState(new int[]{android.R.attr.state_active});
+        } else if (isFocused()) {
             mPinBackground.setState(new int[]{android.R.attr.state_focused});
             if (isNext) {
                 mPinBackground.setState(new int[]{android.R.attr.state_focused, android.R.attr.state_selected});
@@ -330,6 +345,14 @@ public class PinEntryEditText extends EditText {
         } else {
             mPinBackground.setState(new int[]{-android.R.attr.state_focused});
         }
+    }
+
+    public void setError(boolean hasError) {
+        mHasError = hasError;
+    }
+
+    public boolean isError() {
+        return mHasError;
     }
 
     public void focus() {
@@ -343,6 +366,7 @@ public class PinEntryEditText extends EditText {
 
     @Override
     protected void onTextChanged(CharSequence text, final int start, int lengthBefore, final int lengthAfter) {
+        setError(false);
         if (mLineCoords == null || !mAnimate) {
             if (mOnPinEnteredListener != null && text.length() == mMaxLength) {
                 mOnPinEnteredListener.onPinEntered(text);
